@@ -1,12 +1,22 @@
 const express = require('express');
+const authRoutes = require('./routes/authRoutes');
+
 const app = express();
 
 // Middleware
 app.use(express.json());
 
-// Example route
+// Routes
+app.use('/api/auth', authRoutes);
+
+// Health check route
 app.get('/', (req, res) => {
-  res.send('Hello, World!');
+  res.json({ message: 'API is running' });
+});
+
+// Error handling middleware
+app.use((req, res) => {
+  res.status(404).json({ message: 'Route not found' });
 });
 
 module.exports = app;
