@@ -1,9 +1,10 @@
 const Project = require('../models/Project');
+const { ingestProject } = require('../services/projectIngestionService');
 
 // Create a new project with GitHub repository
 const createProject = async (req, res) => {
   try {
-    const { githubUrl, name, description, isPrivate } = req.body;
+    const { githubUrl, name, description, githubBranch } = req.body;
 
     // Validate required fields
     if (!githubUrl) {
@@ -12,61 +13,38 @@ const createProject = async (req, res) => {
       });
     }
 
-    // Extract repo name from GitHub URL to use as project name if not provided
-    let projectName = name;
-    if (!projectName) {
-      try {
-        const url = new URL(githubUrl);
-        const [, , repo] = url.pathname.split('/');
-        projectName = repo.replace('.git', '');
-      } catch (error) {
-        return res.status(400).json({
-          message: 'Invalid GitHub repository URL format'
-        });
-      }
-    }
-
     // Create new project
     const project = new Project({
       githubUrl,
-      name: projectName,
+      name,
       description,
       owner: req.user.userId,
-      settings: {
-        isPrivate: isPrivate ?? true
-      }
+      githubBranch: githubBranch || 'main',
+      status: 'pending' // Initial status
     });
 
     await project.save();
 
     res.status(201).json({
-      message: 'Project created successfully',
+      message: 'Project created successfully. Ingestion process started.',
       project: {
         projectId: project.projectId,
         name: project.name,
-        description: project.description,
         githubUrl: project.githubUrl,
-        githubOwner: project.githubOwner,
-        githubRepoName: project.githubRepoName,
-        githubBranch: project.githubBranch,
-        status: project.status,
-        settings: project.settings,
-        createdAt: project.createdAt
+        status: project.status
       }
     });
+
+    // Asynchronously start the ingestion process
+    ingestProject(project.projectId).catch(err => {
+      console.error(`Error during async ingestion of project ${project.projectId}:`, err);
+    });
+
   } catch (error) {
     console.error('Project creation error:', error);
-    
-    // Handle validation errors
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({
-        message: 'Invalid project data',
-        details: Object.values(error.errors).map(err => err.message)
-      });
-    }
-
     res.status(500).json({
-      message: 'Error creating project'
+      message: 'Failed to create project.',
+      error: error.message
     });
   }
 };
@@ -91,7 +69,7 @@ const getUserProjects = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching projects:', error);
-    res.status(500).json({ message: 'Error fetching projects' });
+    res.status(500).json({ message: 'Error fetching projects', error: error.message });
   }
 };
 
@@ -101,7 +79,7 @@ const getProjectById = async (req, res) => {
     const project = await Project.findOne({ 
       projectId: req.params.projectId,
       status: { $ne: 'deleted' }
-    });
+    }).select('-githubAccessToken');
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
@@ -111,10 +89,10 @@ const getProjectById = async (req, res) => {
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    res.json({ project });
+    res.json(project);
   } catch (error) {
     console.error('Error fetching project:', error);
-    res.status(500).json({ message: 'Error fetching project' });
+    res.status(500).json({ message: 'Failed to retrieve project details.', error: error.message });
   }
 };
 
@@ -150,7 +128,7 @@ const updateProject = async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating project:', error);
-    res.status(500).json({ message: 'Error updating project' });
+    res.status(500).json({ message: 'Error updating project', error: error.message });
   }
 };
 
@@ -176,21 +154,13 @@ const deleteProject = async (req, res) => {
     res.json({ message: 'Project deleted successfully' });
   } catch (error) {
     console.error('Error deleting project:', error);
-    res.status(500).json({ message: 'Error deleting project' });
+    res.status(500).json({ message: 'Error deleting project', error: error.message });
   }
 };
 
-// Update GitHub access token
-const updateGithubToken = async (req, res) => {
+// Resync project
+const resyncProject = async (req, res) => {
   try {
-    const { githubAccessToken } = req.body;
-    
-    if (!githubAccessToken) {
-      return res.status(400).json({
-        message: 'GitHub access token is required'
-      });
-    }
-
     const project = await Project.findOne({ 
       projectId: req.params.projectId,
       status: { $ne: 'deleted' }
@@ -204,23 +174,25 @@ const updateGithubToken = async (req, res) => {
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    project.githubAccessToken = githubAccessToken;
+    project.status = 'pending'; // Set status to pending before re-ingestion
     await project.save();
 
-    // Update connection status
-    await project.updateConnectionStatus(true);
-
-    res.json({
-      message: 'GitHub token updated successfully',
+    res.status(202).json({
+      message: 'Project re-sync requested. Processing will begin shortly.',
       project: {
         projectId: project.projectId,
-        status: project.status,
-        lastSyncedAt: project.lastSyncedAt
+        status: project.status
       }
     });
+
+    // Asynchronously start the re-ingestion process
+    ingestProject(project.projectId).catch(err => {
+      console.error(`Error during async re-ingestion of project ${project.projectId}:`, err);
+    });
+
   } catch (error) {
-    console.error('Error updating GitHub token:', error);
-    res.status(500).json({ message: 'Error updating GitHub token' });
+    console.error('Error triggering re-sync:', error);
+    res.status(500).json({ message: 'Failed to trigger re-sync.', error: error.message });
   }
 };
 
@@ -230,5 +202,5 @@ module.exports = {
   getProjectById,
   updateProject,
   deleteProject,
-  updateGithubToken
+  resyncProject
 }; 

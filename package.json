@@ -1,6 +1,7 @@
 {
-  "name": "server",
+  "name": "codeaxi-server-v2",
   "version": "1.0.0",
+  "type": "commonjs",
   "main": "index.js",
   "scripts": {
     "start": "node -r dotenv/config src/server.js",
@@ -12,12 +13,34 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@babel/parser": "^7.24.7",
+    "@babel/traverse": "^7.24.7",
+    "@chroma-core/default-embed": "^0.1.5",
+    "@google/generative-ai": "^0.24.1",
+    "@octokit/rest": "^18.12.0",
+    "@pinecone-database/pinecone": "^6.1.2",
+    "axios": "^1.11.0",
     "bcrypt": "^5.1.1",
-    "dotenv": "^17.2.0",
+    "bull": "^4.16.5",
+    "chromadb": "^3.0.0",
+    "docx": "^9.5.1",
+    "dotenv": "^16.6.1",
     "express": "^4.19.2",
+    "express-validator": "^7.2.1",
+    "fs-extra": "^11.3.0",
+    "ioredis": "^5.4.1",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.5.0",
-    "mongoose": "^8.16.4"
+    "mongoose": "^8.16.4",
+    "multer": "^2.0.2",
+    "openai": "^5.10.2",
+    "python-ast": "^0.1.0",
+    "redis": "^4.6.13",
+    "simple-git": "^3.28.0",
+    "tree-sitter": "^0.21.1",
+    "tree-sitter-java": "^0.23.5",
+    "tree-sitter-javascript": "^0.23.1",
+    "tree-sitter-python": "^0.23.6"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"

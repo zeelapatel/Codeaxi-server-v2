@@ -1,3 +1,5 @@
+
+// src/models/Project.js
 const mongoose = require('mongoose');
 
 const projectSchema = new mongoose.Schema({
@@ -18,11 +20,11 @@ const projectSchema = new mongoose.Schema({
     default: ''
   },
   owner: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId, // Assuming you have a User model
     ref: 'User',
     required: true
   },
-  // GitHub configuration (required from start)
+  // GitHub configuration
   githubUrl: {
     type: String,
     required: true,
@@ -48,7 +50,7 @@ const projectSchema = new mongoose.Schema({
     trim: true,
     default: 'main'
   },
-  githubAccessToken: {
+  githubAccessToken: { // For future private repo support
     type: String,
     trim: true,
     select: false // This field won't be returned in queries by default
@@ -56,21 +58,21 @@ const projectSchema = new mongoose.Schema({
   // Project status and metadata
   status: {
     type: String,
-    enum: ['initializing', 'active', 'error', 'archived', 'deleted'],
-    default: 'initializing'
+    enum: ['pending', 'cloning', 'ingesting', 'active', 'error', 'archived', 'deleted'],
+    default: 'pending' // Initial status before any processing starts
   },
   lastSyncedAt: {
     type: Date,
     default: null
   },
   settings: {
-    isPrivate: {
+    isPrivate: { // Not directly used for clone, but good metadata
       type: Boolean,
-      default: true
+      default: false // Default to public as per requirement 3
     },
     autoSync: {
       type: Boolean,
-      default: true
+      default: false // Default to false for manual trigger simplicity now
     }
   },
   error: {
@@ -111,9 +113,10 @@ projectSchema.pre('save', async function(next) {
   }
 });
 
-// Instance method to check if user is owner
+// Instance method to check if user is owner (dummy User ID for testing)
 projectSchema.methods.isOwner = function(userId) {
-  return this.owner.toString() === userId.toString();
+  // In a real app, userId would be a mongoose.Types.ObjectId
+  return this.owner && this.owner.toString() === userId.toString();
 };
 
 // Static method to find user's projects
@@ -127,21 +130,22 @@ projectSchema.statics.findUserProjects = function(userId) {
 };
 
 // Method to update GitHub connection status
-projectSchema.methods.updateConnectionStatus = function(success, errorDetails = null) {
-  this.status = success ? 'active' : 'error';
-  if (!success && errorDetails) {
+projectSchema.methods.updateProcessingStatus = function(newStatus, errorDetails = null) {
+  this.status = newStatus;
+  if (newStatus === 'error' && errorDetails) {
     this.error = {
       message: errorDetails.message,
       code: errorDetails.code,
       timestamp: new Date()
     };
   } else {
-    this.error = null;
+    this.error = null; // Clear error if status is not 'error'
   }
-  this.lastSyncedAt = new Date();
+  this.lastSyncedAt = new Date(); // Update sync timestamp on any status change (could be more specific)
   return this.save();
 };
 
+
 const Project = mongoose.model('Project', projectSchema);
 
-module.exports = Project; 
+module.exports = Project;

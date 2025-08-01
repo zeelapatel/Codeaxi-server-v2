@@ -1,0 +1,206 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation</title>
+    <style>
+        :root {
+            --bg-color-light: #ffffff;
+            --bg-color-dark: #1e1e1e;
+            --text-color-light: #000000;
+            --text-color-dark: #ffffff;
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--font-family);
+            background-color: var(--bg-color-light);
+            color: var(--text-color-light);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .dark-theme {
+            background-color: var(--bg-color-dark);
+            color: var(--text-color-dark);
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            min-height: 100vh;
+        }
+
+        nav {
+            flex: 1;
+            max-width: 250px;
+            background-color: var(--primary-color);
+            color: var(--text-color-dark);
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        nav ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        nav ul li {
+            margin: 10px 0;
+        }
+
+        nav ul li a {
+            color: var(--text-color-dark);
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        main {
+            flex: 3;
+            padding: 20px;
+        }
+
+        h1, h2, h3 {
+            color: var(--primary-color);
+        }
+
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+
+        code {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #e9ecef;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .toggle-theme {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: var(--primary-color);
+            color: var(--text-color-dark);
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            nav {
+                max-width: 100%;
+                flex: 1 100%;
+            }
+
+            main {
+                flex: 1 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="toggle-theme" onclick="toggleTheme()">Toggle Theme</button>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#auth">Auth</a></li>
+                <li><a href="#api-reference">API Reference</a></li>
+                <li><a href="#errors">Errors</a></li>
+                <li><a href="#rate-limits">Rate Limits</a></li>
+                <li><a href="#sdks">SDKs</a></li>
+            </ul>
+        </nav>
+        <main>
+            <section id="overview">
+                <h1>Overview</h1>
+                <p>Welcome to the API documentation. Here you will find all the information you need to integrate with our API.</p>
+            </section>
+
+            <section id="auth">
+                <h2>Auth</h2>
+                <p>Authentication is required for all endpoints. Use your API key to authenticate requests.</p>
+            </section>
+
+            <section id="api-reference">
+                <h2>API Reference</h2>
+                <h3>Get Project</h3>
+                <p><strong>URL:</strong> /projects/:id</p>
+                <p><strong>Method:</strong> GET</p>
+                <p><strong>Parameters:</strong></p>
+                <ul>
+                    <li><code>id</code> (string) - The ID of the project.</li>
+                </ul>
+                <p><strong>Response:</strong></p>
+                <pre><code>{
+  "id": "string",
+  "name": "string",
+  "description": "string",
+  "projectContext": "object",
+  "generatedApiDocs": "array"
+}</code></pre>
+                <p><strong>Example:</strong></p>
+                <pre><code>fetch('/projects/123', {
+  method: 'GET',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY'
+  }
+}).then(response => response.json())
+  .then(data => console.log(data));</code></pre>
+
+                <h3>Delete Project</h3>
+                <p><strong>URL:</strong> /projects/:id</p>
+                <p><strong>Method:</strong> DELETE</p>
+                <p><strong>Parameters:</strong></p>
+                <ul>
+                    <li><code>id</code> (string) - The ID of the project.</li>
+                </ul>
+                <p><strong>Response:</strong> 204 No Content</p>
+                <p><strong>Example:</strong></p>
+                <pre><code>fetch('/projects/123', {
+  method: 'DELETE',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY'
+  }
+}).then(response => {
+  if (response.status === 204) {
+    console.log('Project deleted successfully');
+  }
+});</code></pre>
+            </section>
+
+            <section id="errors">
+                <h2>Errors</h2>
+                <p>Common error responses include 404 for not found and 500 for server errors.</p>
+            </section>
+
+            <section id="rate-limits">
+                <h2>Rate Limits</h2>
+                <p>API requests are rate-limited to ensure fair usage. Please refer to your API plan for specific limits.</p>
+            </section>
+
+            <section id="sdks">
+                <h2>SDKs</h2>
+                <p>SDKs are available for various programming languages to simplify integration.</p>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            document.body.classList.toggle('dark-theme');
+        }
+    </script>
+</body>
+</html>
+```
+
+This HTML document provides a modern, responsive API documentation layout with a dark/light theme toggle. It includes a navigation sidebar and sections for overview, authentication, API reference, errors, rate limits, and SDKs. Each API endpoint is detailed with URL, method, parameters, response, and code examples. The design is mobile-responsive using CSS flexbox and grid.

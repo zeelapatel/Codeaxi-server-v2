@@ -1,0 +1,174 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation</title>
+    <style>
+        :root {
+            --bg-color-light: #ffffff;
+            --bg-color-dark: #1e1e1e;
+            --text-color-light: #000000;
+            --text-color-dark: #ffffff;
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--font-family);
+            background-color: var(--bg-color-light);
+            color: var(--text-color-light);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .dark-theme {
+            background-color: var(--bg-color-dark);
+            color: var(--text-color-dark);
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            flex: 1;
+            max-width: 250px;
+            background-color: var(--primary-color);
+            color: var(--text-color-dark);
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .content {
+            flex: 3;
+            padding: 20px;
+        }
+
+        .nav-link {
+            display: block;
+            color: var(--text-color-dark);
+            text-decoration: none;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .nav-link:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .toggle-theme {
+            cursor: pointer;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: var(--secondary-color);
+            color: var(--text-color-dark);
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .toggle-theme:hover {
+            background-color: var(--primary-color);
+        }
+
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+
+        code {
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                max-width: 100%;
+                flex: 1 1 100%;
+            }
+
+            .content {
+                flex: 1 1 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>API Docs</h2>
+            <a href="#overview" class="nav-link">Overview</a>
+            <a href="#auth" class="nav-link">Auth</a>
+            <a href="#api-reference" class="nav-link">API Reference</a>
+            <a href="#errors" class="nav-link">Errors</a>
+            <a href="#rate-limits" class="nav-link">Rate Limits</a>
+            <a href="#sdks" class="nav-link">SDKs</a>
+            <button class="toggle-theme" onclick="toggleTheme()">Toggle Theme</button>
+        </div>
+        <div class="content">
+            <section id="overview">
+                <h2>Overview</h2>
+                <p>Welcome to the API documentation. Here you will find all the information you need to integrate with our API.</p>
+            </section>
+            <section id="auth">
+                <h2>Auth</h2>
+                <p>Authentication is required for all endpoints. Use your API key to authenticate requests.</p>
+            </section>
+            <section id="api-reference">
+                <h2>API Reference</h2>
+                <h3>Get Project</h3>
+                <p><strong>URL:</strong> /projects/:id</p>
+                <p><strong>Method:</strong> GET</p>
+                <p><strong>Parameters:</strong></p>
+                <ul>
+                    <li><code>id</code> (string) - The ID of the project.</li>
+                </ul>
+                <p><strong>Response:</strong></p>
+                <pre><code>{
+  "id": "string",
+  "name": "string",
+  "description": "string",
+  "projectContext": "object",
+  "generatedApiDocs": "array"
+}</code></pre>
+                <p><strong>Example:</strong></p>
+                <pre><code>fetch('/projects/123', {
+  method: 'GET',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY'
+  }
+}).then(response => response.json())
+  .then(data => console.log(data));</code></pre>
+            </section>
+            <section id="errors">
+                <h2>Errors</h2>
+                <p>Errors are returned using standard HTTP error codes.</p>
+            </section>
+            <section id="rate-limits">
+                <h2>Rate Limits</h2>
+                <p>Our API has rate limits to ensure fair usage. Please refer to the documentation for specific limits.</p>
+            </section>
+            <section id="sdks">
+                <h2>SDKs</h2>
+                <p>SDKs are available for various languages to simplify integration with our API.</p>
+            </section>
+        </div>
+    </div>
+    <script>
+        function toggleTheme() {
+            document.body.classList.toggle('dark-theme');
+        }
+    </script>
+</body>
+</html>
+```
+
+This HTML file includes a modern design with a sidebar for navigation, a toggle button for dark/light theme, and sections for API documentation. It uses CSS for styling and JavaScript for theme toggling. The design is responsive, ensuring usability on mobile devices.

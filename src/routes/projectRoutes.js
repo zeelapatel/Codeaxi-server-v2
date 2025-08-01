@@ -5,7 +5,7 @@ const {
   getProjectById,
   updateProject,
   deleteProject,
-  updateGithubToken
+  resyncProject
 } = require('../controllers/projectController');
 const verifyToken = require('../middleware/auth');
 
@@ -21,7 +21,7 @@ router.get('/:projectId', getProjectById);
 router.put('/:projectId', updateProject);
 router.delete('/:projectId', deleteProject);
 
-// GitHub token update
-router.put('/:projectId/github-token', updateGithubToken);
+// Project re-sync
+router.post('/:projectId/resync', resyncProject);
 
 module.exports = router; 
