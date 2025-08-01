@@ -194,14 +194,6 @@ Return JSON:
      * @returns {Promise<Object>} Generated documentation
      */
     async generateDocumentation(projectId) {
-        // Initialize documentation context
-        let docContext = {
-            currentSection: "",
-            completedSections: [],
-            nextSection: "Overview",
-            progress: 0
-        };
-
         // Get repository metadata
         const repoMetadata = await getRepoMetadata(projectId);
         if (!repoMetadata) {
@@ -217,70 +209,67 @@ Return JSON:
             }
         );
 
-        // Initialize documentation storage
-        let fullDocumentation = "";
+        // Sort files by importance
+        const sortedFiles = [...repoMetadata.files].sort((a, b) => b.importance - a.importance);
+        const entryPoints = repoMetadata.entryPoints || [];
 
-        while (docContext.progress < 100) {
-            // Generate query for next section
-            const query = await this.generateNextQuery(docContext);
-            
-            // Get relevant code context
-            const results = await queryCodeDB(query, projectId, 10);
-            
-            // Validate query results
-            const validation = await this.validateQueryResults(query, results.documents[0], docContext);
-            
-            if (!validation.isRelevant) {
-                // Try with suggested query if available
-                if (validation.suggestedQuery) {
-                    const newResults = await queryCodeDB(validation.suggestedQuery, projectId, 10);
-                    const newValidation = await this.validateQueryResults(validation.suggestedQuery, newResults.documents[0], docContext);
-                    if (newValidation.isRelevant) {
-                        results = newResults;
-                    }
-                }
-            }
+        // Group files by type
+        const fileGroups = {
+            routes: sortedFiles.filter(f => f.filePath.includes('routes')),
+            controllers: sortedFiles.filter(f => f.filePath.includes('controllers')),
+            models: sortedFiles.filter(f => f.filePath.includes('models')),
+            services: sortedFiles.filter(f => f.filePath.includes('services')),
+            other: sortedFiles.filter(f => 
+                !f.filePath.includes('routes') && 
+                !f.filePath.includes('controllers') && 
+                !f.filePath.includes('models') && 
+                !f.filePath.includes('services')
+            )
+        };
 
-            // Generate documentation section
-            const sectionResult = await this.generateDocumentationSection(results.documents[0], docContext);
-            
-            // Update documentation
-            fullDocumentation += "\n\n" + sectionResult.documentation;
-            
-            // Update context
-            docContext = {
-                currentSection: sectionResult.documentation,
-                completedSections: [...docContext.completedSections, docContext.nextSection],
-                nextSection: sectionResult.nextSection,
-                progress: sectionResult.progress
-            };
+        // Build documentation context
+        let documentationContext = `Project Structure Overview:
+${Object.entries(fileGroups).map(([group, files]) => 
+    `\n${group.toUpperCase()}:
+${files.map(f => `- ${f.filePath} (Importance: ${f.importance})
+  ${f.documentationContext}`).join('\n')}`
+).join('\n')}
 
-            // Update progress in database
-            await RepoMetadata.findOneAndUpdate(
-                { projectId },
-                { 
-                    'documentationProgress.currentStep': docContext.nextSection,
-                    'documentationProgress.completedSections': docContext.completedSections,
-                    'documentationProgress.lastUpdated': new Date()
-                }
+Entry Points:
+${entryPoints.map(ep => `- ${ep.filePath} (Priority: ${ep.priority})
+  ${ep.reason}`).join('\n')}`;
+
+        // Get code content for important files
+        for (const file of sortedFiles.filter(f => f.importance > 70)) {
+            const results = await queryCodeDB(
+                `Find code in file: ${file.filePath}`,
+                projectId,
+                5
             );
-
-            // Cache the current state
-            this.documentationCache.set(projectId, {
-                fullDocumentation,
-                context: docContext,
-                lastUpdated: new Date()
-            });
+            if (results.documents && results.documents[0]) {
+                documentationContext += `\n\nFile: ${file.filePath}\n${results.documents[0].join('\n')}`;
+            }
         }
+
+        // Generate documentation
+        const fullDocumentation = documentationContext;
 
         // Update final status
         await RepoMetadata.findOneAndUpdate(
             { projectId },
             { 
                 'documentationProgress.status': 'completed',
-                'documentationProgress.lastUpdated': new Date()
+                'documentationProgress.lastUpdated': new Date(),
+                'documentationProgress.currentStep': 'Completed',
+                'documentationProgress.completedSections': ['Overview', 'Routes', 'Controllers', 'Models', 'Services']
             }
         );
+
+        // Cache the documentation
+        this.documentationCache.set(projectId, {
+            fullDocumentation,
+            lastUpdated: new Date()
+        });
 
         return fullDocumentation;
     }

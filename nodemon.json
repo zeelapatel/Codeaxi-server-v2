@@ -1,8 +1,5 @@
 {
-  "watch": ["src/"],
-  "ext": ".js,.json",
-  "ignore": ["node_modules/", "*.test.js"],
-  "env": {
-    "NODE_ENV": "development"
-  }
-} 
+  "watch": ["src/**/*"],
+  "ext": "js,json",
+  "ignore": [".env", "*.env"]
+}

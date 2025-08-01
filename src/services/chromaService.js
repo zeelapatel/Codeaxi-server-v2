@@ -3,7 +3,7 @@ const { ChromaClient } = require('chromadb');
 require('dotenv').config(); // Loads .env variables
 const axios = require('axios');
 
-const EMBEDDING_SERVICE_URL = process.env.EMBEDDING_SERVICE_URL || 'http://10.110.25.148:5000/embed';
+const EMBEDDING_SERVICE_URL = process.env.EMBEDDING_SERVICE_URL || 'http://10.0.0.212:5000/embed';
 const CHROMA_URL = process.env.CHROMA_URL || 'http://localhost:8000';
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second

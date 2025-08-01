@@ -107,46 +107,103 @@ function createEndpointSection(endpoint) {
  * @returns {Promise<Document>} The generated Word document
  */
 async function generateDocumentationWithLLM(codeContext) {
-    const systemPrompt = `You are a technical writer. Create clear API docs focusing on endpoints, params, examples, and errors.`;
+    // Break down code context into smaller chunks if it's too large
+    const contextChunks = [];
+    const maxChunkSize = 6000; // Leave room for prompts and response
+    let currentChunk = "";
 
-    const userPrompt = `Create API docs from this code:
+    const contextLines = codeContext.split('\n');
+    for (const line of contextLines) {
+        if ((currentChunk + line).length > maxChunkSize) {
+            contextChunks.push(currentChunk);
+            currentChunk = line;
+        } else {
+            currentChunk += line + '\n';
+        }
+    }
+    if (currentChunk) {
+        contextChunks.push(currentChunk);
+    }
 
-${codeContext}
+    console.log(`[LLM] Split documentation into ${contextChunks.length} chunks`);
 
-Return JSON with sections: Overview, Auth, Endpoints (with params/examples), Errors.`;
+    const systemPrompt = `You are a technical writer. Create clear API docs focusing on endpoints, params, examples, and errors. 
+Generate documentation in JSON format that can be merged with other sections.`;
+
+    // Process each chunk and combine results
+    let combinedDoc = {
+        overview: "",
+        authentication: "",
+        endpoints: [],
+        errorHandling: ""
+    };
 
     try {
-        console.log(`[LLM] Starting final documentation generation`);
-        console.time(`[LLM] Final documentation time`);
+        for (let i = 0; i < contextChunks.length; i++) {
+            const userPrompt = `Analyze this part ${i + 1}/${contextChunks.length} of the codebase:
 
-        const completion = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo-16k",
-            messages: [
-                {
-                    role: "system",
-                    content: systemPrompt
-                },
-                {
-                    role: "user",
-                    content: userPrompt
-                }
-            ],
-            temperature: 0.1,
-            max_tokens: 16000,
-            top_p: 1,
-            frequency_penalty: 0,
-            presence_penalty: 0,
-            response_format: { type: "json_object" }
-        });
+${contextChunks[i]}
 
-        console.timeEnd(`[LLM] Final documentation time`);
+Return JSON with sections:
+{
+    "overview": "Additional overview information",
+    "authentication": "Auth-related information",
+    "endpoints": [
+        {
+            "name": "endpoint name",
+            "method": "HTTP method",
+            "url": "path",
+            "description": "description",
+            "parameters": []
+        }
+    ],
+    "errorHandling": "Error handling information"
+}`;
 
-        const docContent = JSON.parse(completion.choices[0].message.content.trim());
-        console.log(`[LLM] Generated final documentation with sections:
-  - Overview: ${docContent.overview ? docContent.overview.substring(0, 50) + '...' : 'N/A'}
-  - Auth: ${docContent.authentication ? 'Present' : 'N/A'}
-  - Endpoints: ${docContent.endpoints ? docContent.endpoints.length : 0} endpoints
-  - Error Handling: ${docContent.errorHandling ? 'Present' : 'N/A'}`);
+            console.log(`[LLM] Processing chunk ${i + 1}/${contextChunks.length}`);
+            console.time(`[LLM] Chunk ${i + 1} processing time`);
+
+            const completion = await openai.chat.completions.create({
+                model: "gpt-3.5-turbo-16k",
+                messages: [
+                    {
+                        role: "system",
+                        content: systemPrompt
+                    },
+                    {
+                        role: "user",
+                        content: userPrompt
+                    }
+                ],
+                temperature: 0.1,
+                max_tokens: 4000,
+                top_p: 1,
+                frequency_penalty: 0,
+                presence_penalty: 0,
+                response_format: { type: "json_object" }
+            });
+
+            console.timeEnd(`[LLM] Chunk ${i + 1} processing time`);
+
+            const chunkContent = JSON.parse(completion.choices[0].message.content.trim());
+            
+            // Merge chunk results into combined doc
+            combinedDoc.overview += (chunkContent.overview ? "\n" + chunkContent.overview : "");
+            combinedDoc.authentication += (chunkContent.authentication ? "\n" + chunkContent.authentication : "");
+            combinedDoc.endpoints.push(...(chunkContent.endpoints || []));
+            combinedDoc.errorHandling += (chunkContent.errorHandling ? "\n" + chunkContent.errorHandling : "");
+            
+            // Add a small delay between chunks to avoid rate limits
+            if (i < contextChunks.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
+
+        console.log(`[LLM] Documentation generation complete:
+- Overview length: ${combinedDoc.overview.length} chars
+- Auth section length: ${combinedDoc.authentication.length} chars
+- Endpoints found: ${combinedDoc.endpoints.length}
+- Error handling length: ${combinedDoc.errorHandling.length} chars`);
 
         // Create Word document
         const doc = new Document({
@@ -166,7 +223,7 @@ Return JSON with sections: Overview, Auth, Endpoints (with params/examples), Err
                         heading: HeadingLevel.HEADING_1
                     }),
                     new Paragraph({
-                        text: docContent.overview || "No overview provided."
+                        text: combinedDoc.overview || "No overview provided."
                     }),
 
                     // Authentication
@@ -175,7 +232,7 @@ Return JSON with sections: Overview, Auth, Endpoints (with params/examples), Err
                         heading: HeadingLevel.HEADING_1
                     }),
                     new Paragraph({
-                        text: docContent.authentication || "No authentication details provided."
+                        text: combinedDoc.authentication || "No authentication details provided."
                     }),
 
                     // Endpoints
@@ -183,7 +240,7 @@ Return JSON with sections: Overview, Auth, Endpoints (with params/examples), Err
                         text: "API Endpoints",
                         heading: HeadingLevel.HEADING_1
                     }),
-                    ...(docContent.endpoints || []).flatMap(endpoint => createEndpointSection(endpoint)),
+                    ...(combinedDoc.endpoints || []).flatMap(endpoint => createEndpointSection(endpoint)),
 
                     // Error Handling
                     new Paragraph({
@@ -191,7 +248,7 @@ Return JSON with sections: Overview, Auth, Endpoints (with params/examples), Err
                         heading: HeadingLevel.HEADING_1
                     }),
                     new Paragraph({
-                        text: docContent.errorHandling || "No error handling information provided."
+                        text: combinedDoc.errorHandling || "No error handling information provided."
                     })
                 ]
             }]

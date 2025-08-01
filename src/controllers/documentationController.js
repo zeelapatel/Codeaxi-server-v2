@@ -18,7 +18,7 @@ const generateDocumentation = async (req, res) => {
             projectId: req.params.projectId,
             status: { $ne: 'deleted' }
         });
-
+        console.log(process.env.OPENAI_API_KEY);
         if (!project || project.status !== 'active') {
             return res.status(400).json({ 
                 message: 'Project not found or not yet active (ingestion not complete).' 
